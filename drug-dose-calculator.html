@@ -1,0 +1,447 @@
+<!--
+  Smart Paramedics Drug Dose Calculator
+  Ready to upload alongside the existing internal tool pages.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Drug Dose Calculator - Smart Paramedics</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-Avb2QiuDEEvB4bZJYdft2mNjVShBftLdPG8FJ0V7irTLQ8Uo0qcPxh4Plq7G5tGm0rU+1SPhVotteLpBERwTkw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <link rel="icon" type="image/png" href="favicon.png">
+
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#006666">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Smart&nbsp;Paramedics">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="167x167" href="/ipad-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/ipad-touch-icon-152.png">
+
+  <meta name="author" content="Vlad da Cunha">
+  <meta name="description" content="A generic medication dose-to-volume calculator for clinical use.">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+  <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=(), accelerometer=(), magnetometer=(), gyroscope=(), fullscreen=(self)">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'; script-src 'self' https://code.jquery.com https://cdnjs.cloudflare.com https://static.cloudflareinsights.com 'unsafe-inline'; font-src 'self' https://cdnjs.cloudflare.com data:; img-src 'self' data:; connect-src 'self';">
+  <style>
+    label {
+      margin-top: 30px;
+    }
+    .dose-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 130px;
+      gap: 10px;
+      align-items: end;
+    }
+
+    label b {
+      color: var(--primary);
+    }
+
+    .description {
+      margin-bottom: 30px;
+    }
+
+    .dose-row label { display: block; }
+
+    .dose-row input,
+    .dose-row select {
+      width: 100%;
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      padding: 8px;
+      margin-top: 6px;
+      font: inherit;
+      color: var(--text-dark);
+      background: #fff;
+    }
+
+    .dose-row input:focus,
+    .dose-row select:focus {
+      border-color: var(--primary);
+      outline: none;
+    }
+
+    .dose-row select:disabled {
+      background: #eef2f2;
+      color: #607273;
+      cursor: not-allowed;
+    }
+
+    .conversion-alert {
+      background: #FDECEC;
+      border-left: 4px solid #B3261E;
+      margin: 50px 0;
+      
+    }
+
+    .conversion-alert strong {
+      color: #7F1D1D !important;
+    }
+
+    .calculation-alert {
+      background: #fff0f0;
+      border-left: 4px solid #b3261e;
+      color: #7f1d1d;
+    }
+
+    .volume-result {
+      /*background: #00796b;*/
+      border-left: 4px solid #004d40;
+      margin-bottom: 50px;
+    }
+
+    .volume-result strong {
+      /*color: #ffffff !important;*/
+    }
+
+    .verification-note {
+      margin: 14px 2px 0;
+      color: #665f3d;
+      font-size: 0.9rem;
+      line-height: 1.45;
+    }
+
+    .dose-mode[hidden] { display: none; }
+
+    @media (max-width: 480px) {
+      .dose-row { grid-template-columns: minmax(0, 1fr) 112px; gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="header-placeholder"></div>
+
+<div class="container">
+  <div class="left">
+    <h2 class="tool-title">Drug Dose Calculator</h2>
+
+    <div class="section">
+      <h3>Clinical safety check</h3>
+      <p class="description">This tool performs a mathematical conversion only. <br><br>
+        Enter values exactly as prescribed and labelled, then independently verify the result against the medication label, patient factors, and your local protocol before administration.</p>
+    </div>
+
+    <div class="section">
+      <h3>Medication</h3>
+      <p class="description">Enter the drug amount and total volume stated on the vial, ampoule, or prepared solution. </p>
+
+      <label for="medication-name"><b>Medication name</b> <span class="description">(optional)</span></label>
+      <input id="medication-name" type="text" autocomplete="off" placeholder="e.g. Medication name">
+
+      <div class="dose-row">
+        <label for="drug-amount"><b>Drug concentration in the vial</b>
+          <input id="drug-amount" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 500">
+        </label>
+        <label for="drug-unit"><b>Unit</b>
+          <select id="drug-unit">
+            <option value="mg">mg</option>
+            <option value="micrograms">micrograms</option>
+            <option value="units">units</option>
+          </select>
+        </label>
+      
+
+      <label for="preparation-volume"><b>Total volume of vial (mL)</b>
+      <input id="preparation-volume" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 2">
+      </label>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Prescribed dose</h3>
+      <p class="description"></p>
+
+      <div class="checkbox-group">
+        <label><b>Calculation Method</b></label>
+        <label><input type="radio" name="dose-type" value="fixed" checked> Fixed dose</label>
+        <label><input type="radio" name="dose-type" value="per-kg"> Weight-based dose (per kg)</label>
+      </div>
+
+      <div id="fixed-dose-fields" class="dose-mode">
+        <div class="dose-row">
+          <label for="desired-dose"><b>Desired dose</b>
+            <input id="desired-dose" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 250">
+          </label>
+          <label for="desired-unit-fixed"><b>Unit</b>
+            <select id="desired-unit-fixed">
+              <option value="mg">mg</option>
+              <option value="micrograms">micrograms</option>
+              <option value="units">units</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div id="weight-dose-fields" class="dose-mode" hidden>
+        <div class="dose-row">
+          <label for="dose-per-kg"><b>Dose per kg</b>
+            <input id="dose-per-kg" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 0.2">
+          </label>
+          <label for="desired-unit-per-kg">Unit per kg
+            <select id="desired-unit-per-kg">
+              <option value="mg">mg</option>
+              <option value="micrograms">micrograms</option>
+            </select>
+          </label>
+        
+
+        <label for="patient-weight"><b>Patient weight (kg)</b>
+        <input id="patient-weight" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 12">
+        </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="right">
+    <h2 class="tool-title">Calculated Volume</h2>
+    <div id="output" aria-live="polite">
+      <div class="sentence"><strong>Enter the preparation and prescribed dose to calculate the volume to draw up.</strong></div>
+    </div>
+    <button id="copyAll" type="button">📋 Copy Calculation</button>
+  </div>
+</div>
+
+<button id="toggleView" class="toggle-btn">
+  <i class="fas fa-arrow-down"></i> Jump to Output
+</button>
+
+<div id="footer-placeholder"></div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  fetch("header.html").then(r => r.text()).then(html => {
+    document.getElementById("header-placeholder").innerHTML = html;
+  });
+  fetch("footer.html").then(r => r.text()).then(html => {
+    document.getElementById("footer-placeholder").innerHTML = html;
+  });
+});
+
+$(document).ready(function() {
+  function numberFromInput(id) {
+    var value = $(id).val().trim().replace(',', '.');
+    var number = Number(value);
+    return Number.isFinite(number) && number > 0 ? number : null;
+  }
+
+  function displayNumber(number) {
+    return number.toLocaleString(undefined, {
+      maximumFractionDigits: 6,
+      useGrouping: false
+    });
+  }
+
+  function sentence(text) {
+    return $('<div>', { class: 'sentence' }).append($('<strong>').text(text));
+  }
+
+  function alertSentence(text, className) {
+    return $('<div>', { class: 'sentence ' + className }).append($('<strong>').text(text));
+  }
+
+  function convertToPreparationUnit(dose, doseUnit, preparationUnit) {
+    if (doseUnit === preparationUnit) {
+      return { value: dose, converted: false };
+    }
+
+    var massToMicrograms = { mg: 1000, micrograms: 1 };
+    if (!(doseUnit in massToMicrograms) || !(preparationUnit in massToMicrograms)) {
+      return { error: 'Medication units cannot be converted to or from mass units. Select matching units or verify the medicine-specific conversion in your local protocol.' };
+    }
+
+    return {
+      value: dose * massToMicrograms[doseUnit] / massToMicrograms[preparationUnit],
+      converted: true
+    };
+  }
+
+  function syncDesiredUnit() {
+    var $preparationUnit = $('#drug-unit');
+    var $desiredUnits = $('#desired-unit-fixed, #desired-unit-per-kg');
+    var preparationUsesUnits = $preparationUnit.val() === 'units';
+    var wasLocked = $desiredUnits.first().prop('disabled');
+
+    if (preparationUsesUnits) {
+      $desiredUnits.val('units').prop('disabled', true);
+    } else {
+      $desiredUnits.prop('disabled', false);
+      if (wasLocked) $desiredUnits.val($preparationUnit.val());
+    }
+  }
+
+  function toggleDoseMode() {
+    var useWeightBasedDose = $('input[name="dose-type"]:checked').val() === 'per-kg';
+    $('#fixed-dose-fields').prop('hidden', useWeightBasedDose);
+    $('#weight-dose-fields').prop('hidden', !useWeightBasedDose);
+  }
+
+  function buildCalculation() {
+    var drugAmount = numberFromInput('#drug-amount');
+    var preparationVolume = numberFromInput('#preparation-volume');
+    var preparationUnit = $('#drug-unit').val();
+    var medicationName = $('#medication-name').val().trim();
+    var $output = $('#output').empty();
+
+    if (drugAmount === null || preparationVolume === null) {
+      $output.append(sentence('Enter values for the drug amount and volume.'));
+      return;
+    }
+
+    var useWeightBasedDose = $('input[name="dose-type"]:checked').val() === 'per-kg';
+    var desiredDose;
+    var desiredUnit;
+    var weightCalculationText = '';
+
+    if (useWeightBasedDose) {
+      var dosePerKg = numberFromInput('#dose-per-kg');
+      var patientWeight = numberFromInput('#patient-weight');
+      desiredUnit = $('#desired-unit-per-kg').val();
+
+      if (dosePerKg === null || patientWeight === null) {
+        $output.append(sentence('Enter positive numbers for the dose per kg and patient weight.'));
+        return;
+      }
+
+      desiredDose = dosePerKg * patientWeight;
+      weightCalculationText = 'Weight-based dose: ' + displayNumber(dosePerKg) + ' ' + desiredUnit + '/kg × ' + displayNumber(patientWeight) + ' kg = ' + displayNumber(desiredDose) + ' ' + desiredUnit;
+    } else {
+      desiredDose = numberFromInput('#desired-dose');
+      desiredUnit = $('#desired-unit-fixed').val();
+
+      if (desiredDose === null) {
+        $output.append(sentence('Enter a positive number for the desired dose.'));
+        return;
+      }
+    }
+
+    var conversion = convertToPreparationUnit(desiredDose, desiredUnit, preparationUnit);
+    if (conversion.error) {
+      $output.append(alertSentence(conversion.error, 'calculation-alert'));
+      return;
+    }
+
+    var doseInPreparationUnit = conversion.value;
+    var concentration = drugAmount / preparationVolume;
+    var volumeToDrawUp = doseInPreparationUnit / concentration;
+    var medicationLabel = medicationName ? medicationName + ': ' : '';
+
+    if (weightCalculationText) $output.append(sentence(weightCalculationText));
+
+    if (conversion.converted) {
+      $output.append(alertSentence(
+        'UNIT CONVERSION APPLIED: ' + displayNumber(desiredDose) + ' ' + desiredUnit +
+        ' = ' + displayNumber(doseInPreparationUnit) + ' ' + preparationUnit +
+        '. The calculation below uses ' + preparationUnit + '.',
+        'conversion-alert'
+      ));
+    }
+
+    $output.append(sentence(
+      medicationLabel + 'Concentration: ' + displayNumber(drugAmount) + ' ' + preparationUnit +
+      ' ÷ ' + displayNumber(preparationVolume) + ' mL = ' + displayNumber(concentration) + ' ' + preparationUnit + '/mL'
+    ));
+    $output.append(
+      $('<div>', { class: 'sentence volume-result' }).append(
+        $('<strong>').text(
+          'Volume required: ' + displayNumber(doseInPreparationUnit) + ' ' + preparationUnit +
+          ' ÷ ' + displayNumber(concentration) + ' ' + preparationUnit + '/mL = ' + displayNumber(volumeToDrawUp) + ' mL'
+        )
+      )
+    );
+    $output.append(
+      $('<p>', { class: 'verification-note' }).text(
+        'Verify the units, calculation, prescribed dose, medication label, and local protocol before administration.'
+      )
+    );
+  }
+
+  $('#medication-name, #drug-amount, #preparation-volume, #desired-dose, #dose-per-kg, #patient-weight').on('input', buildCalculation);
+  $('#drug-unit').on('change', function() {
+    syncDesiredUnit();
+    buildCalculation();
+  });
+  $('#desired-unit-fixed, #desired-unit-per-kg').on('change', buildCalculation);
+  $('input[name="dose-type"]').on('change', function() {
+    toggleDoseMode();
+    buildCalculation();
+  });
+
+  $('#copyAll').on('click', function() {
+    var text = $('#output .sentence, #output .verification-note').map(function(_, element) {
+      return $(element).text().trim();
+    }).get().join('\n');
+
+    navigator.clipboard.writeText(text);
+    $(this).text('✅ Copied!');
+    setTimeout(() => $(this).text('📋 Copy Calculation'), 1200);
+  });
+
+  syncDesiredUnit();
+  toggleDoseMode();
+  buildCalculation();
+});
+
+// Floating toggle logic (mobile only; fade in/out)
+$(document).ready(function() {
+  var $btn = $('#toggleView');
+  var $left = $('.left');
+  var $right = $('.right');
+  var showingOutput = false;
+
+  if (!$btn.length || !$left.length || !$right.length) return;
+
+  function updateButtonLabel(isOutput) {
+    $btn.html(isOutput
+      ? '<i class="fas fa-arrow-up"></i> Jump to Input'
+      : '<i class="fas fa-arrow-down"></i> Jump to Output');
+  }
+
+  function onScroll() {
+    var scrollTop = $(window).scrollTop();
+    var atBottom = scrollTop + $(window).height() >= $(document).height() - 110;
+
+    if (atBottom || scrollTop <= 120) {
+      $btn.removeClass('visible');
+      if (scrollTop <= 120) {
+        showingOutput = false;
+        updateButtonLabel(false);
+      }
+      return;
+    }
+
+    $btn.addClass('visible');
+    var outputIsActive = $right.get(0).getBoundingClientRect().top <= window.innerHeight * 0.25;
+    if (outputIsActive !== showingOutput) {
+      showingOutput = outputIsActive;
+      updateButtonLabel(showingOutput);
+    }
+  }
+
+  $(window).on('scroll', onScroll);
+  $(window).on('resize orientationchange', function() { setTimeout(onScroll, 300); });
+  $btn.on('click', function() {
+    (showingOutput ? $left : $right).get(0).scrollIntoView({ behavior: 'smooth' });
+    showingOutput = !showingOutput;
+    updateButtonLabel(showingOutput);
+  });
+  onScroll();
+});
+
+$(document).ready(function() {
+  $.get("footer.html", function(html) {
+    $("#footer-placeholder").html(html);
+    $("#currentYear").text(new Date().getFullYear());
+  });
+});
+</script>
+
+</body>
+</html>

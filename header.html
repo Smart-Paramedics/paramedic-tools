@@ -7,10 +7,34 @@
 -->
 
 <!-- Mini Header -->
+<style>
+  .shop-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--primary, #00796b);
+    color: #ffffff;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+    transition: background 0.25s, transform 0.15s;
+  }
+
+  .shop-link:hover {
+    background: #004d40;
+    transform: translateY(-1px);
+  }
+</style>
+
 <div class="tool-header">
   <div class="header-left">
     <a href="index.html" class="back-link"><i class="fas fa-arrow-left"></i> All Tools</a>
   </div>
-  <div class="header-right">  </div>
+  <div class="header-right">
+    <a href="https://smartparamedics.au/" class="shop-link" target="_blank" rel="noopener noreferrer"><i class="fas fa-store"></i> Smart Paramedics Shop</a>
+  </div>
 </div>
 <!-- END Mini Header -->
